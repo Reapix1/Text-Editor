@@ -1,0 +1,13 @@
+#include "HotKeys.h"
+#include <Windows.h>
+
+void InitializeHotKeys()
+{
+	RegisterHotKey(NULL, HTKEY_CTRL_S, MOD_CONTROL, 0x53);
+	RegisterHotKey(NULL, HTKEY_CTRL_G, MOD_CONTROL | MOD_NOREPEAT, 0x47);
+
+	RegisterHotKey(NULL, HTKEY_CTRL_ARR_UP, MOD_CONTROL, VK_UP);
+	RegisterHotKey(NULL, HTKEY_CTRL_ARR_DOWN, MOD_CONTROL, VK_DOWN);
+	RegisterHotKey(NULL, HTKEY_CTRL_SHFT_ARR_UP, MOD_CONTROL | MOD_SHIFT, VK_UP);
+	RegisterHotKey(NULL, HTKEY_CTRL_SHFT_ARR_DOWN, MOD_CONTROL | MOD_SHIFT, VK_DOWN);
+}
