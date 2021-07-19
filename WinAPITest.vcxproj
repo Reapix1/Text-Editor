@@ -159,6 +159,8 @@
     <ResourceCompile Include="res\GoToLineBox.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
+    <None Include="res\GoToLineBox.aps" />
     <None Include="res\RCa17184" />
     <None Include="WinAPITest.aps" />
   </ItemGroup>

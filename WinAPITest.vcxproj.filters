@@ -41,5 +41,7 @@
   <ItemGroup>
     <None Include="res\RCa17184" />
     <None Include="WinAPITest.aps" />
+    <None Include="README.md" />
+    <None Include="res\GoToLineBox.aps" />
   </ItemGroup>
 </Project>

@@ -1,8 +1,11 @@
 #include "Application.h"
+#include <vector>
 
 static HWND hEdit;
 static HWND hStatus;
 static HWND hDlgGoToLine;
+
+std::vector<int> line;
 
 static INITCOMMONCONTROLSEX icc;
 
@@ -13,10 +16,12 @@ static bool bIsFileCreated;
 
 BOOL CALLBACK DlgGoToLineProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 void SaveOpenedFile(HWND hWnd);
-void SaveFile(HWND hWnd, OPENFILENAME ofn);
-void OpenFile(HWND hWnd, OPENFILENAME ofn);
+void SaveFileWithDialog(HWND hWnd, OPENFILENAME ofn);
+void SaveFile(LPWSTR lpwstrFilePath);
+void OpenFileWithDialog(HWND hWnd, OPENFILENAME ofn);
+void OpenFileDragAndDrop(HDROP hDrop);
+void OpenFile(LPWSTR lpwstrFilePath);
 void UpdateStatusBar();
-
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -105,6 +110,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			TRUE);
 		return 0;
 
+	case WM_DROPFILES:
+		OpenFileDragAndDrop((HDROP)wParam);
+		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
@@ -113,12 +121,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendMessage(hWnd, WM_COMMAND, ID_SAVE, NULL);
 			break;
 		case ID_OPEN:
-			OpenFile(hWnd, ofn);
-			bIsFileCreated = true;
+			OpenFileWithDialog(hWnd, ofn);
 			break;
 		case ID_SAVE:
-			SaveFile(hWnd, ofn);
-			bIsFileCreated = true;
+			SaveFileWithDialog(hWnd, ofn);
 			break;
 		case ID_CLOSE:
 			SendMessage(hWnd, WM_DESTROY, NULL, NULL);
@@ -128,7 +134,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch (HIWORD(wParam))
 		{
 		case EN_CHANGE:
-			UpdateStatusBar();		
+			UpdateStatusBar();
 			break;
 		}
 		break;
@@ -334,35 +340,14 @@ void SaveOpenedFile(HWND hWnd)
 			{
 				if (SendMessage(hStatus, SB_GETTEXT, 0, (LPARAM)path))
 				{
-					HANDLE hFile;
-					hFile = CreateFile(path, GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-					if (hFile != INVALID_HANDLE_VALUE)
-					{
-						int len = GetWindowTextLength(hEdit);
-						if (len > 0)
-						{
-							wchar_t* buf;
-							buf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
-
-							if (buf != NULL)
-							{
-								if (GetWindowText(hEdit, buf, len + 1))
-								{
-									DWORD dwWritten;
-									WriteFile(hFile, buf, 2 * len, &dwWritten, NULL);
-									VirtualFree(buf, 0, MEM_RELEASE);
-									CloseHandle(hFile);
-								}
-							}
-						}
-					}
+					SaveFile(path);
 					VirtualFree(path, 0, MEM_RELEASE);
 				}
 			}
 		}
 }
 
-void SaveFile(HWND hWnd, OPENFILENAME ofn)
+void SaveFileWithDialog(HWND hWnd, OPENFILENAME ofn)
 {
 	char filepath[MAX_FILE_PATH];
 	filepath[0] = 0;
@@ -378,35 +363,39 @@ void SaveFile(HWND hWnd, OPENFILENAME ofn)
 	ofn.Flags = OFN_DONTADDTORECENT | OFN_OVERWRITEPROMPT | OFN_CREATEPROMPT | OFN_PATHMUSTEXIST | OFN_EXPLORER;
 	ofn.lpstrDefExt = L".txt";
 	if (GetSaveFileName(&ofn))
+		SaveFile((LPWSTR)filepath);
+}
+
+void SaveFile(LPWSTR lpwstrFilePath)
+{
+	SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)lpwstrFilePath);
+
+	HANDLE hFile;
+	hFile = CreateFile((LPCWSTR)lpwstrFilePath, GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)filepath);
-
-		HANDLE hFile;
-		hFile = CreateFile((LPCWSTR)filepath, GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (hFile != INVALID_HANDLE_VALUE)
+		int len = GetWindowTextLength(hEdit);
+		if (len > 0)
 		{
-			int len = GetWindowTextLength(hEdit);
-			if (len > 0)
-			{
-				wchar_t* buf;
-				buf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+			wchar_t* buf;
+			buf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
 
-				if (buf != NULL)
+			if (buf != NULL)
+			{
+				if (GetWindowText(hEdit, buf, len + 1))
 				{
-					if (GetWindowText(hEdit, buf, len + 1))
-					{
-						DWORD dwWritten;
-						WriteFile(hFile, buf, 2 * len, &dwWritten, NULL);
-						VirtualFree(buf, 0, MEM_RELEASE);
-						CloseHandle(hFile);
-					}
+					DWORD dwWritten;
+					WriteFile(hFile, buf, 2 * len, &dwWritten, NULL);
+					VirtualFree(buf, 0, MEM_RELEASE);
+					CloseHandle(hFile);
+					bIsFileCreated = true;
 				}
 			}
 		}
 	}
 }
 
-void OpenFile(HWND hWnd, OPENFILENAME ofn)
+void OpenFileWithDialog(HWND hWnd, OPENFILENAME ofn)
 {
 	char filepath[MAX_FILE_PATH];
 	filepath[0] = 0;
@@ -423,42 +412,55 @@ void OpenFile(HWND hWnd, OPENFILENAME ofn)
 	ofn.lpstrDefExt = L".txt";
 
 	if (GetOpenFileName(&ofn))
-	{
-		HANDLE hFile;
-		hFile = CreateFile((LPCWSTR)filepath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
-		if (hFile != INVALID_HANDLE_VALUE)
-		{
-			DWORD dwFilesize = GetFileSize(hFile, NULL);
-			if (dwFilesize != 0xFFFFFFFF)
-			{
-				wchar_t* buf;
-				buf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+		OpenFile((LPWSTR)filepath);
+}
 
-				if (buf != NULL)
+void OpenFileDragAndDrop(HDROP hDrop)
+{
+	wchar_t filepath[MAX_FILE_PATH];
+	int cnt = DragQueryFile(hDrop, NULL, filepath, MAX_FILE_PATH);
+	OutputDebugString(std::to_wstring(cnt).c_str());
+	OpenFile(filepath);
+	DragFinish(hDrop);
+}	
+
+void OpenFile(LPWSTR lpwstrFilePath)
+{
+	HANDLE hFile;
+	hFile = CreateFile((LPCWSTR)lpwstrFilePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD dwFilesize = GetFileSize(hFile, NULL);
+		if (dwFilesize != 0xFFFFFFFF)
+		{
+			wchar_t* buf;
+			buf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+
+			if (buf != NULL)
+			{
+				DWORD dwRead;
+				if (ReadFile(hFile, buf, dwFilesize, &dwRead, NULL))
 				{
-					DWORD dwRead;
-					if (ReadFile(hFile, buf, dwFilesize, &dwRead, NULL))
+					std::wstring s = buf;
+					int nAmountOfCharactersInFile = s.length();
+					buf[dwFilesize] = 0;
+					if (dwFilesize / 2 == nAmountOfCharactersInFile)
 					{
-						std::wstring s = buf;
-						int nAmountOfCharactersInFile = s.length();
-						buf[dwFilesize] = 0;
-						if (dwFilesize / 2 == nAmountOfCharactersInFile)
-						{
-							SetWindowTextW(hEdit, buf);
-						}
-						else
-						{
-							SetWindowTextA(hEdit, (LPCSTR)buf);
-						}
-						SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)filepath);
-						VirtualFree(buf, 0, MEM_RELEASE);
-						CloseHandle(hFile);
-						UpdateStatusBar();
+						SetWindowTextW(hEdit, buf);
+						bIsFileCreated = true;
 					}
+					else
+					{
+						SetWindowTextA(hEdit, (LPCSTR)buf);
+						bIsFileCreated = true;
+					}
+					SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)lpwstrFilePath);
+					VirtualFree(buf, 0, MEM_RELEASE);
+					CloseHandle(hFile);
+					UpdateStatusBar();
 				}
 			}
 		}
-
 	}
 }
 
