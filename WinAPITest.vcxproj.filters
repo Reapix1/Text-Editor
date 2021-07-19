@@ -43,5 +43,6 @@
     <None Include="WinAPITest.aps" />
     <None Include="README.md" />
     <None Include="res\GoToLineBox.aps" />
+    <None Include=".gitignore" />
   </ItemGroup>
 </Project>

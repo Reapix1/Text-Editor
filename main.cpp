@@ -1,17 +1,17 @@
 #include "Application.h"
-#include <vector>
 
 static HWND hEdit;
 static HWND hStatus;
 static HWND hDlgGoToLine;
-
-std::vector<int> line;
+static HWND hHScrollBar;
+static HWND hVScrollBar;
 
 static INITCOMMONCONTROLSEX icc;
 
 /* FILES */
 static OPENFILENAME ofn = {};
 static bool bIsFileCreated;
+static bool bTwoBytesPerChar;
 /* FILES */
 
 BOOL CALLBACK DlgGoToLineProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
@@ -39,7 +39,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_HOTKEY:
-		switch(LOWORD((wParam)))
+		switch (LOWORD((wParam)))
 		{
 		case HTKEY_CTRL_S:
 			if (bIsFileCreated)
@@ -99,8 +99,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		MoveWindow(hEdit,
 			200, 0,                // starting x- and y-coordinates 
-			LOWORD(lParam) - 200,  // width of client area 
-			HIWORD(lParam) - 23,   // height of client area 
+			LOWORD(lParam) - 200 - 15,  // width of client area - some space - width of vertical scroll bar
+			HIWORD(lParam) - 23 - 15,   // height of client area - height of status bar - height of horizontal scroll bar
 			TRUE);                 // repaint window
 
 		MoveWindow(hStatus,
@@ -108,6 +108,25 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			LOWORD(lParam),
 			HIWORD(lParam),
 			TRUE);
+
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+		int nVScrollBarSize;
+		nVScrollBarSize = 15;
+		MoveWindow(hVScrollBar,
+			rect.right - nVScrollBarSize, 0,
+			nVScrollBarSize,
+			rect.bottom - nVScrollBarSize - 8,
+			TRUE);
+
+		int nHScrollBarSize;
+		nHScrollBarSize = 15;
+		MoveWindow(hHScrollBar,
+			200, rect.bottom - nHScrollBarSize - 23,
+			rect.right - nHScrollBarSize - 200,
+			nHScrollBarSize,
+			TRUE);
+
 		return 0;
 
 	case WM_DROPFILES:
@@ -138,7 +157,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		break;
-	
+
 	case WM_LBUTTONUP:
 		UpdateStatusBar();
 		return 0;
@@ -227,6 +246,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	UpdateStatusBar();
 	/*=== Status bar ===*/
 
+	/*=== Scroll bars ===*/
+	// TODO: Scroll bar functionality
+	hVScrollBar = CreateWindowEx(0, L"SCROLLBAR", NULL, WS_CHILD | WS_VISIBLE | SBS_VERT, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
+	hHScrollBar = CreateWindowEx(0, L"SCROLLBAR", NULL, WS_CHILD | WS_VISIBLE | SBS_HORZ, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
+	/*=== Scroll bars ===*/
+
+
 	SetMenu(hWnd, hMenu);
 
 
@@ -252,22 +278,22 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				if (GetDlgItem(hDlgGoToLine, IDC_EDIT1) == GetFocus()) SendMessage(hDlgGoToLine, WM_KEYDOWN, msg.wParam, msg.lParam);
 			}
 
-			if(msg.message == WM_KEYUP)
+			if (msg.message == WM_KEYUP)
 				SendMessage(hWnd, WM_KEYUP, msg.wParam, msg.lParam);
-			
+
 			if (msg.message == WM_HOTKEY)
 				SendMessage(hWnd, WM_HOTKEY, msg.wParam, msg.lParam);
 
 			if (msg.message == WM_MOUSEWHEEL)
 				SendMessage(hWnd, WM_MOUSEWHEEL, msg.wParam, msg.lParam);
 
-			if(msg.message == WM_MOUSEHWHEEL)
+			if (msg.message == WM_MOUSEHWHEEL)
 				SendMessage(hWnd, WM_MOUSEHWHEEL, msg.wParam, msg.lParam);
 
-			if(msg.message == WM_LBUTTONUP)
+			if (msg.message == WM_LBUTTONUP)
 				SendMessage(hWnd, WM_LBUTTONUP, msg.wParam, msg.lParam);
 
-			
+
 			DispatchMessage(&msg); // Calls WindowProc function indirectly, once for each message.
 		}
 		else
@@ -300,7 +326,7 @@ BOOL CALLBACK DlgGoToLineProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 			SendMessage(hDlg, WM_COMMAND, IDCANCEL, NULL);
 			break;
 		}
-	
+
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
@@ -312,8 +338,8 @@ BOOL CALLBACK DlgGoToLineProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 				SetFocus(hEdit);
 				nFirstCharacterAtLine = SendMessage(hEdit, EM_LINEINDEX, nLine, NULL);
 				nLastCharacterAtLine = SendMessage(hEdit, EM_LINEINDEX, nLine + 1, NULL) - 1;
-					if (nFirstCharacterAtLine != -1)
-						SendMessage(hEdit, EM_SETSEL, nFirstCharacterAtLine, nLastCharacterAtLine);
+				if (nFirstCharacterAtLine != -1)
+					SendMessage(hEdit, EM_SETSEL, nFirstCharacterAtLine, nLastCharacterAtLine);
 				UpdateStatusBar();
 			}
 			break;
@@ -330,21 +356,21 @@ BOOL CALLBACK DlgGoToLineProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 
 void SaveOpenedFile(HWND hWnd)
 {
-		int nPathLength = LOWORD(SendMessage(hStatus, SB_GETTEXTLENGTH, 0, NULL));
-		if (nPathLength > 0)
-		{
-			wchar_t* path;
-			path = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+	int nPathLength = LOWORD(SendMessage(hStatus, SB_GETTEXTLENGTH, 0, NULL));
+	if (nPathLength > 0)
+	{
+		wchar_t* path;
+		path = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
 
-			if (path != NULL)
+		if (path != NULL)
+		{
+			if (SendMessage(hStatus, SB_GETTEXT, 0, (LPARAM)path))
 			{
-				if (SendMessage(hStatus, SB_GETTEXT, 0, (LPARAM)path))
-				{
-					SaveFile(path);
-					VirtualFree(path, 0, MEM_RELEASE);
-				}
+				SaveFile(path);
+				VirtualFree(path, 0, MEM_RELEASE);
 			}
 		}
+	}
 }
 
 void SaveFileWithDialog(HWND hWnd, OPENFILENAME ofn)
@@ -377,20 +403,40 @@ void SaveFile(LPWSTR lpwstrFilePath)
 		int len = GetWindowTextLength(hEdit);
 		if (len > 0)
 		{
-			wchar_t* buf;
-			buf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
-
-			if (buf != NULL)
+			if (bTwoBytesPerChar)
 			{
-				if (GetWindowText(hEdit, buf, len + 1))
-				{
-					DWORD dwWritten;
-					WriteFile(hFile, buf, 2 * len, &dwWritten, NULL);
-					VirtualFree(buf, 0, MEM_RELEASE);
-					CloseHandle(hFile);
-					bIsFileCreated = true;
-				}
+				wchar_t* Wbuf;
+				Wbuf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+				if (Wbuf != NULL)
+					if (GetWindowTextW(hEdit, Wbuf, len + 1))
+					{
+						DWORD dwWritten;
+						WriteFile(hFile, Wbuf, len * 2, &dwWritten, NULL);
+						VirtualFree(Wbuf, 0, MEM_RELEASE);
+						CloseHandle(hFile);
+						bIsFileCreated = true;
+						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
+
+					}
+
 			}
+			else if (!bTwoBytesPerChar)
+			{
+				char* Abuf;
+				Abuf = (char*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+				if (Abuf != NULL)
+					if (GetWindowTextA(hEdit, (LPSTR)Abuf, len + 1))
+					{
+						DWORD dwWritten;
+						WriteFile(hFile, Abuf, len, &dwWritten, NULL);
+						VirtualFree(Abuf, 0, MEM_RELEASE);
+						CloseHandle(hFile);
+						bIsFileCreated = true;
+						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
+
+					}
+			}
+
 		}
 	}
 }
@@ -418,11 +464,10 @@ void OpenFileWithDialog(HWND hWnd, OPENFILENAME ofn)
 void OpenFileDragAndDrop(HDROP hDrop)
 {
 	wchar_t filepath[MAX_FILE_PATH];
-	int cnt = DragQueryFile(hDrop, NULL, filepath, MAX_FILE_PATH);
-	OutputDebugString(std::to_wstring(cnt).c_str());
+	DragQueryFile(hDrop, NULL, filepath, MAX_FILE_PATH);
 	OpenFile(filepath);
 	DragFinish(hDrop);
-}	
+}
 
 void OpenFile(LPWSTR lpwstrFilePath)
 {
@@ -433,26 +478,30 @@ void OpenFile(LPWSTR lpwstrFilePath)
 		DWORD dwFilesize = GetFileSize(hFile, NULL);
 		if (dwFilesize != 0xFFFFFFFF)
 		{
-			wchar_t* buf;
-			buf = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+			char* buf;
+			buf = (char*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
 
 			if (buf != NULL)
 			{
 				DWORD dwRead;
 				if (ReadFile(hFile, buf, dwFilesize, &dwRead, NULL))
 				{
-					std::wstring s = buf;
+					std::string s = buf;
 					int nAmountOfCharactersInFile = s.length();
 					buf[dwFilesize] = 0;
-					if (dwFilesize / 2 == nAmountOfCharactersInFile)
+					if (nAmountOfCharactersInFile * dwFilesize == dwFilesize)
 					{
-						SetWindowTextW(hEdit, buf);
+						bTwoBytesPerChar = true;
+						SetWindowTextW(hEdit, (LPCWSTR)buf);
 						bIsFileCreated = true;
+						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
 					}
 					else
 					{
-						SetWindowTextA(hEdit, (LPCSTR)buf);
+						bTwoBytesPerChar = false;
+						SetWindowTextA(hEdit, buf);
 						bIsFileCreated = true;
+						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
 					}
 					SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)lpwstrFilePath);
 					VirtualFree(buf, 0, MEM_RELEASE);

@@ -1,7 +1,7 @@
 ﻿  main.cpp
-D:\VSsource\WinAPITest\main.cpp(313,40): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(314,78): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(446,48): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(471,17): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(475,16): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(339,40): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(340,78): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(490,48): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(519,17): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(523,16): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
   WinAPITest.vcxproj -> D:\VSsource\WinAPITest\x64\Debug\WinAPITest.exe
