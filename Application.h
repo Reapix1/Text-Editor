@@ -20,6 +20,8 @@
 #include <windows.h>
 #include <CommCtrl.h>
 #include <Richedit.h>
+#include <vector>
+#include <algorithm>
 
 #include "res/resource1.h"
 #include "HotKeys.h"
@@ -33,3 +35,4 @@
 #else
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
+

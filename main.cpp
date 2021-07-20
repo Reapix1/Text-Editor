@@ -5,8 +5,12 @@ static HWND hStatus;
 static HWND hDlgGoToLine;
 static HWND hHScrollBar;
 static HWND hVScrollBar;
+static HWND hTabControl;
 
 static INITCOMMONCONTROLSEX icc;
+
+static std::vector<std::wstring> tabFilePaths;
+
 
 /* FILES */
 static OPENFILENAME ofn = {};
@@ -22,6 +26,7 @@ void OpenFileWithDialog(HWND hWnd, OPENFILENAME ofn);
 void OpenFileDragAndDrop(HDROP hDrop);
 void OpenFile(LPWSTR lpwstrFilePath);
 void UpdateStatusBar();
+void AddTab(HWND hTabControl, LPWSTR lpwstrTabName, LPWSTR lpwstrFilePath);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -35,7 +40,21 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage function that adds a NULL message to the message queue. It simply returns 0.
 		In the while loop at the bottom of this application a NULL message causes the application to quit.
 		*/
+	case WM_CREATE:
+		break;
+
 	case WM_PAINT:
+		break;
+	
+	case WM_NOTIFY:
+		switch (((LPNMHDR)lParam)->code)
+		{
+		case TCN_SELCHANGE:
+			int nIdCurrSel;
+			nIdCurrSel = SendMessage(hTabControl, TCM_GETCURSEL, NULL, NULL);
+			OpenFile((LPWSTR)tabFilePaths[nIdCurrSel].c_str());
+			break;
+		}
 		break;
 
 	case WM_HOTKEY:
@@ -98,15 +117,21 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		/* When resizing the client window the Edit Text is also resized, so that it matches the client window.*/
 	case WM_SIZE:
 		MoveWindow(hEdit,
-			200, 0,                // starting x- and y-coordinates 
-			LOWORD(lParam) - 200 - 15,  // width of client area - some space - width of vertical scroll bar
-			HIWORD(lParam) - 23 - 15,   // height of client area - height of status bar - height of horizontal scroll bar
-			TRUE);                 // repaint window
+			200, 0 + 25,							//  starting x- and y-coordinates : y is reduced by size of TabControl
+			LOWORD(lParam) - 200 - 15,				//  width of client area - some space - width of vertical scroll bar
+			HIWORD(lParam) - 23 - 15 - 25,			//  height of client area - height of status bar - height of horizontal scroll bar - height of TabControl
+			TRUE);									//  repaint window
 
 		MoveWindow(hStatus,
 			0, 0,
 			LOWORD(lParam),
 			HIWORD(lParam),
+			TRUE);
+
+		MoveWindow(hTabControl,
+			0, 0,
+			LOWORD(lParam),
+			25,
 			TRUE);
 
 		RECT rect;
@@ -154,6 +179,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case EN_CHANGE:
 			UpdateStatusBar();
+			//PaintTxt(L"Hello");
 			break;
 		}
 		break;
@@ -231,7 +257,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 	/*=== Rich edit ===*/
 	LoadLibrary(TEXT("Msftedit.dll"));
-	hEdit = CreateWindowEx(0, MSFTEDIT_CLASS, L"Hello World!", WS_CHILD | WS_TABSTOP | WS_VISIBLE | ES_MULTILINE | ES_LEFT | ES_AUTOVSCROLL | ES_AUTOHSCROLL, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
+	hEdit = CreateWindowEx(0, MSFTEDIT_CLASS, L"Hello World!", WS_CHILD | WS_TABSTOP | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_LEFT | ES_AUTOVSCROLL | ES_AUTOHSCROLL, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
 	HFONT hFont = CreateFont(20, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, UNICODE, OUT_TT_ONLY_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"));
 	SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
 	SendMessage(hEdit, EM_SETMARGINS, EC_LEFTMARGIN, 70);
@@ -252,6 +278,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	hHScrollBar = CreateWindowEx(0, L"SCROLLBAR", NULL, WS_CHILD | WS_VISIBLE | SBS_HORZ, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
 	/*=== Scroll bars ===*/
 
+	/*=== Tab Control (Holding all tabs) ===*/
+	hTabControl = CreateWindowEx(0, WC_TABCONTROL, NULL, WS_CHILD | WS_VISIBLE | TCS_BUTTONS | TCS_FOCUSONBUTTONDOWN | TCS_FLATBUTTONS, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
+	/*=== Tab Control (Holding all tabs) ===*/
 
 	SetMenu(hWnd, hMenu);
 
@@ -415,7 +444,6 @@ void SaveFile(LPWSTR lpwstrFilePath)
 						VirtualFree(Wbuf, 0, MEM_RELEASE);
 						CloseHandle(hFile);
 						bIsFileCreated = true;
-						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
 
 					}
 
@@ -432,7 +460,6 @@ void SaveFile(LPWSTR lpwstrFilePath)
 						VirtualFree(Abuf, 0, MEM_RELEASE);
 						CloseHandle(hFile);
 						bIsFileCreated = true;
-						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
 
 					}
 			}
@@ -486,22 +513,26 @@ void OpenFile(LPWSTR lpwstrFilePath)
 				DWORD dwRead;
 				if (ReadFile(hFile, buf, dwFilesize, &dwRead, NULL))
 				{
+					std::wstring strFilepath = lpwstrFilePath;
+					std::size_t found = strFilepath.find_last_of(L"\\");
+					std::wstring filename = strFilepath.substr(found + 1);
+
 					std::string s = buf;
 					int nAmountOfCharactersInFile = s.length();
 					buf[dwFilesize] = 0;
-					if (nAmountOfCharactersInFile * dwFilesize == dwFilesize)
+					if (nAmountOfCharactersInFile * dwFilesize == dwFilesize && dwFilesize != NULL)
 					{
 						bTwoBytesPerChar = true;
 						SetWindowTextW(hEdit, (LPCWSTR)buf);
 						bIsFileCreated = true;
-						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
+						AddTab(hTabControl, (LPWSTR)filename.c_str(), lpwstrFilePath);
 					}
 					else
 					{
 						bTwoBytesPerChar = false;
 						SetWindowTextA(hEdit, buf);
 						bIsFileCreated = true;
-						OutputDebugString(std::to_wstring(bTwoBytesPerChar).c_str());
+						AddTab(hTabControl, (LPWSTR)filename.c_str(), lpwstrFilePath);
 					}
 					SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)lpwstrFilePath);
 					VirtualFree(buf, 0, MEM_RELEASE);
@@ -525,3 +556,55 @@ void UpdateStatusBar()
 	std::wstring wstrOutputCurrLine = L"Line: " + wstrCurrLine;
 	SendMessage(hStatus, SB_SETTEXT, 2, (LPARAM)wstrOutputCurrLine.c_str());
 }
+
+/* Adds a tab at the end of the Tab Control */
+void AddTab(HWND hTabControl, LPWSTR lpwstrTabName, LPWSTR lpwstrFilePath)
+{
+	/* Checks if the given file path is already present in the tabFilePaths vector and hence in the Tab Control.
+	   The statement is true if no element is found i.e. the file path does not exist. */
+	if (std::find(tabFilePaths.begin(), tabFilePaths.end(), lpwstrFilePath) == tabFilePaths.end())
+	{
+		int nId;
+		int nTabItemCount;
+		TCITEM tcitem;
+
+		tcitem.mask = TCIF_TEXT;
+		tcitem.pszText = lpwstrTabName;
+		nTabItemCount = SendMessage(hTabControl, TCM_GETITEMCOUNT, NULL, NULL);
+		nId = nTabItemCount == 0 ? 0 : nTabItemCount;
+
+		SendMessage(hTabControl, TCM_INSERTITEM, nId, (LPARAM)&tcitem);
+	
+		SendMessage(hTabControl, TCM_SETCURFOCUS, nId, NULL);
+		SendMessage(hTabControl, TCM_SETCURSEL, nId, NULL);
+
+		tabFilePaths.push_back(lpwstrFilePath);
+	}
+}
+
+// TODO:::SYNTAX HIGHLIGHTING
+/*
+void PaintTxt(LPCWSTR word) 
+{
+	FINDTEXT ft;
+	ft.chrg.cpMin = 0;
+	ft.chrg.cpMax = GetWindowTextLength(hEdit);
+	ft.lpstrText = (LPCWSTR)word;
+	std::wstring s(word);
+
+	int res = SendMessage(hEdit, EM_FINDTEXT, FR_DOWN | FR_WHOLEWORD, (LPARAM)&ft);
+	if (res != -1)
+	{
+		int selWord = SendMessage(hEdit, EM_SETSEL, res, s.length());
+		OutputDebugString(ft.lpstrText);
+		CHARFORMAT cf;
+		cf.cbSize = sizeof(cf);
+		cf.dwMask = CFM_COLOR;
+		cf.crTextColor = RGB(255, 0, 0);
+		cf.dwEffects = 0;
+		SendMessage(hEdit, EM_SETCHARFORMAT, SCF_WORD | SCF_SELECTION, (LPARAM)&cf);
+		HDC hdc = GetDC(hEdit);
+		SetTextColor(hdc, RGB(0, 0, 0));
+	}
+}
+*/

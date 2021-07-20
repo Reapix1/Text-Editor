@@ -45,4 +45,7 @@
     <None Include="res\GoToLineBox.aps" />
     <None Include=".gitignore" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="TODO.txt" />
+  </ItemGroup>
 </Project>
