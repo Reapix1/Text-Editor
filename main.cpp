@@ -580,6 +580,17 @@ void AddTab(HWND hTabControl, LPWSTR lpwstrTabName, LPWSTR lpwstrFilePath)
 
 		tabFilePaths.push_back(lpwstrFilePath);
 	}
+	else
+	{
+		/* Gets the index of the requested file path and sets the focus for this specific item.
+		   The requested file path is already an item of Tab Control. */
+		std::vector<std::wstring>::iterator it;
+		it = std::find(tabFilePaths.begin(), tabFilePaths.end(), lpwstrFilePath);
+		int nDuplicateTabIndex = std::distance(tabFilePaths.begin(), it);
+		OutputDebugString(std::to_wstring(nDuplicateTabIndex).c_str());
+		SendMessage(hTabControl, TCM_SETCURFOCUS, nDuplicateTabIndex, NULL);
+		SendMessage(hTabControl, TCM_SETCURSEL, nDuplicateTabIndex, NULL);
+	}
 }
 
 // TODO:::SYNTAX HIGHLIGHTING
