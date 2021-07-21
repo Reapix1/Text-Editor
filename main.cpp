@@ -62,13 +62,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case HTKEY_CTRL_S:
 			if (bIsFileCreated)
-			{
-				SaveOpenedFile(hWnd);
-			}
+				if(hWnd == GetFocus() || hEdit == GetFocus())
+					SaveOpenedFile(hWnd);
 			else
-			{
-				SendMessage(hWnd, WM_COMMAND, ID_SAVE, NULL);
-			}
+				if (hWnd == GetFocus() || hEdit == GetFocus())
+					SendMessage(hWnd, WM_COMMAND, ID_SAVE_AS, NULL);
 			break;
 		case HTKEY_CTRL_G:
 			if (!IsWindow(hDlgGoToLine))
@@ -90,6 +88,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		case HTKEY_CTRL_SHFT_ARR_DOWN:
 			if (hEdit == GetFocus()) SendMessage(hEdit, EM_SCROLL, SB_PAGEDOWN, NULL);
+			break;
+		case HTKEY_CTRL_ALT_S:
+			if (hWnd == GetFocus() || hEdit == GetFocus())
+				SendMessage(hWnd, WM_COMMAND, ID_SAVE_AS, NULL);
 			break;
 		}
 		break;
@@ -139,9 +141,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		int nVScrollBarSize;
 		nVScrollBarSize = 15;
 		MoveWindow(hVScrollBar,
-			rect.right - nVScrollBarSize, 0,
+			rect.right - nVScrollBarSize, 25,
 			nVScrollBarSize,
-			rect.bottom - nVScrollBarSize - 8,
+			rect.bottom - nVScrollBarSize - 8 - 25,
 			TRUE);
 
 		int nHScrollBarSize;
@@ -162,13 +164,19 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case ID_NEW:
 			SetWindowText(hEdit, L"\r");
-			SendMessage(hWnd, WM_COMMAND, ID_SAVE, NULL);
+			SendMessage(hWnd, WM_COMMAND, ID_SAVE_AS, NULL);
 			break;
 		case ID_OPEN:
 			OpenFileWithDialog(hWnd, ofn);
 			break;
-		case ID_SAVE:
+		case ID_SAVE_AS:
 			SaveFileWithDialog(hWnd, ofn);
+			break;
+		case ID_SAVE:
+			if (bIsFileCreated)
+				SaveOpenedFile(hWnd);
+			else
+				SendMessage(hWnd, WM_COMMAND, ID_SAVE_AS, NULL);
 			break;
 		case ID_CLOSE:
 			SendMessage(hWnd, WM_DESTROY, NULL, NULL);
@@ -233,11 +241,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	/* Menu creation */
 	HMENU hMenu = CreateMenu();
 	HMENU hFileMenu = CreateMenu();
-	AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hFileMenu, L"File");
-	AppendMenu(hFileMenu, MF_STRING, ID_NEW, L"New");
-	AppendMenu(hFileMenu, MF_STRING, ID_OPEN, L"Open");
-	AppendMenu(hFileMenu, MF_STRING, ID_SAVE, L"Save");
-	AppendMenu(hFileMenu, MF_STRING, ID_CLOSE, L"Close");
+	AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hFileMenu, L"&File");
+	AppendMenu(hFileMenu, MF_STRING, ID_NEW, L"&New");
+	AppendMenu(hFileMenu, MF_STRING, ID_OPEN, L"&Open");
+	AppendMenu(hFileMenu, MF_STRING, ID_SAVE_AS, L"&Save As...\tCtrl+Alt+S");
+	AppendMenu(hFileMenu, MF_STRING, ID_SAVE, L"&Save\tCtrl+S");
+	AppendMenu(hFileMenu, MF_STRING, ID_CLOSE, L"&Close\tAlt+F4");
 	/* Menu creation */
 
 	wcl.style = CS_HREDRAW | CS_VREDRAW; // Wenn sich das Fenster in der Größe ändert, wird das gesamte Fenster neu gezeichnet.
@@ -321,7 +330,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 			if (msg.message == WM_LBUTTONUP)
 				SendMessage(hWnd, WM_LBUTTONUP, msg.wParam, msg.lParam);
-
 
 			DispatchMessage(&msg); // Calls WindowProc function indirectly, once for each message.
 		}
@@ -587,7 +595,6 @@ void AddTab(HWND hTabControl, LPWSTR lpwstrTabName, LPWSTR lpwstrFilePath)
 		std::vector<std::wstring>::iterator it;
 		it = std::find(tabFilePaths.begin(), tabFilePaths.end(), lpwstrFilePath);
 		int nDuplicateTabIndex = std::distance(tabFilePaths.begin(), it);
-		OutputDebugString(std::to_wstring(nDuplicateTabIndex).c_str());
 		SendMessage(hTabControl, TCM_SETCURFOCUS, nDuplicateTabIndex, NULL);
 		SendMessage(hTabControl, TCM_SETCURSEL, nDuplicateTabIndex, NULL);
 	}

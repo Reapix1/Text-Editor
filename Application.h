@@ -7,10 +7,12 @@
 #define UNICODE
 #endif 
 
+/* MENU BUTTONS */
 #define ID_NEW 101
 #define ID_OPEN 102
-#define ID_SAVE 103
-#define ID_CLOSE 104
+#define ID_SAVE_AS 103
+#define ID_SAVE 104
+#define ID_CLOSE 105
 
 
 #define MAX_FILE_PATH 2048

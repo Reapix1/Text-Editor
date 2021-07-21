@@ -6,5 +6,6 @@
 #define HTKEY_CTRL_ARR_DOWN 2003
 #define HTKEY_CTRL_SHFT_ARR_UP 2004
 #define HTKEY_CTRL_SHFT_ARR_DOWN 2005
+#define HTKEY_CTRL_ALT_S 2006
 
 void InitializeHotKeys();
