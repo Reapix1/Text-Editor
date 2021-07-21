@@ -21,15 +21,21 @@
     <ClCompile Include="hotkeys.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Filetypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HotKeys.h">
+    <ClInclude Include="Hotkeys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="res\resource1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Filetypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

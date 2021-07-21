@@ -26,6 +26,7 @@ void OpenFileWithDialog(HWND hWnd, OPENFILENAME ofn);
 void OpenFileDragAndDrop(HDROP hDrop);
 void OpenFile(LPWSTR lpwstrFilePath);
 void UpdateStatusBar();
+void UpdateFileTypeNameInStatusBar(LPWSTR lpwstrFilePath);
 void AddTab(HWND hTabControl, LPWSTR lpwstrTabName, LPWSTR lpwstrFilePath);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -64,7 +65,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (bIsFileCreated)
 				if(hWnd == GetFocus() || hEdit == GetFocus())
 					SaveOpenedFile(hWnd);
-			else
+			if(!bIsFileCreated)
 				if (hWnd == GetFocus() || hEdit == GetFocus())
 					SendMessage(hWnd, WM_COMMAND, ID_SAVE_AS, NULL);
 			break;
@@ -274,10 +275,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	/*=== Rich edit ===*/
 
 	/*=== Status bar ===*/
-	hStatus = CreateWindowEx(0, STATUSCLASSNAME, L"File to load...", SBARS_TOOLTIPS | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
+	hStatus = CreateWindowEx(0, STATUSCLASSNAME, L"Filetype waiting...", SBARS_TOOLTIPS | WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
 	int nPartsLocations[] = { 500, 570, 640, -1 };
 	int nParts = 4;
 	SendMessage(hStatus, SB_SETPARTS, (WPARAM)nParts, (LPARAM)nPartsLocations);
+	SendMessage(hStatus, SB_SETTEXT, SendMessage(hStatus, SB_GETPARTS, NULL, NULL) - 1, (LPARAM)L"File to load...");
 	UpdateStatusBar();
 	/*=== Status bar ===*/
 
@@ -393,7 +395,7 @@ BOOL CALLBACK DlgGoToLineProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam
 
 void SaveOpenedFile(HWND hWnd)
 {
-	int nPathLength = LOWORD(SendMessage(hStatus, SB_GETTEXTLENGTH, 0, NULL));
+	int nPathLength = LOWORD(SendMessage(hStatus, SB_GETTEXTLENGTH, SendMessage(hStatus, SB_GETPARTS, NULL, NULL) - 1, NULL));
 	if (nPathLength > 0)
 	{
 		wchar_t* path;
@@ -401,7 +403,7 @@ void SaveOpenedFile(HWND hWnd)
 
 		if (path != NULL)
 		{
-			if (SendMessage(hStatus, SB_GETTEXT, 0, (LPARAM)path))
+			if (SendMessage(hStatus, SB_GETTEXT, SendMessage(hStatus, SB_GETPARTS, NULL, NULL) - 1, (LPARAM)path))
 			{
 				SaveFile(path);
 				VirtualFree(path, 0, MEM_RELEASE);
@@ -431,7 +433,7 @@ void SaveFileWithDialog(HWND hWnd, OPENFILENAME ofn)
 
 void SaveFile(LPWSTR lpwstrFilePath)
 {
-	SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)lpwstrFilePath);
+	SendMessage(hStatus, SB_SETTEXT, SendMessage(hStatus, SB_GETPARTS, NULL, NULL) - 1, (LPARAM)lpwstrFilePath);
 
 	HANDLE hFile;
 	hFile = CreateFile((LPCWSTR)lpwstrFilePath, GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -440,6 +442,12 @@ void SaveFile(LPWSTR lpwstrFilePath)
 		int len = GetWindowTextLength(hEdit);
 		if (len > 0)
 		{
+			std::wstring strFilepath = lpwstrFilePath;
+			std::size_t foundFilename = strFilepath.find_last_of(L"\\");
+			std::wstring wstrFilename = strFilepath.substr(foundFilename + 1);
+
+			UpdateFileTypeNameInStatusBar(lpwstrFilePath);
+
 			if (bTwoBytesPerChar)
 			{
 				wchar_t* Wbuf;
@@ -452,6 +460,7 @@ void SaveFile(LPWSTR lpwstrFilePath)
 						VirtualFree(Wbuf, 0, MEM_RELEASE);
 						CloseHandle(hFile);
 						bIsFileCreated = true;
+						AddTab(hTabControl, (LPWSTR)wstrFilename.c_str(), lpwstrFilePath);
 
 					}
 
@@ -468,7 +477,7 @@ void SaveFile(LPWSTR lpwstrFilePath)
 						VirtualFree(Abuf, 0, MEM_RELEASE);
 						CloseHandle(hFile);
 						bIsFileCreated = true;
-
+						AddTab(hTabControl, (LPWSTR)wstrFilename.c_str(), lpwstrFilePath);
 					}
 			}
 
@@ -522,8 +531,10 @@ void OpenFile(LPWSTR lpwstrFilePath)
 				if (ReadFile(hFile, buf, dwFilesize, &dwRead, NULL))
 				{
 					std::wstring strFilepath = lpwstrFilePath;
-					std::size_t found = strFilepath.find_last_of(L"\\");
-					std::wstring filename = strFilepath.substr(found + 1);
+					std::size_t foundFilename = strFilepath.find_last_of(L"\\");
+					std::wstring wstrFilename = strFilepath.substr(foundFilename + 1);
+
+					UpdateFileTypeNameInStatusBar(lpwstrFilePath);
 
 					std::string s = buf;
 					int nAmountOfCharactersInFile = s.length();
@@ -533,16 +544,16 @@ void OpenFile(LPWSTR lpwstrFilePath)
 						bTwoBytesPerChar = true;
 						SetWindowTextW(hEdit, (LPCWSTR)buf);
 						bIsFileCreated = true;
-						AddTab(hTabControl, (LPWSTR)filename.c_str(), lpwstrFilePath);
+						AddTab(hTabControl, (LPWSTR)wstrFilename.c_str(), lpwstrFilePath);
 					}
 					else
 					{
 						bTwoBytesPerChar = false;
 						SetWindowTextA(hEdit, buf);
 						bIsFileCreated = true;
-						AddTab(hTabControl, (LPWSTR)filename.c_str(), lpwstrFilePath);
+						AddTab(hTabControl, (LPWSTR)wstrFilename.c_str(), lpwstrFilePath);
 					}
-					SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)lpwstrFilePath);
+					SendMessage(hStatus, SB_SETTEXT, SendMessage(hStatus, SB_GETPARTS, NULL, NULL)-1, (LPARAM)lpwstrFilePath);
 					VirtualFree(buf, 0, MEM_RELEASE);
 					CloseHandle(hFile);
 					UpdateStatusBar();
@@ -554,6 +565,7 @@ void OpenFile(LPWSTR lpwstrFilePath)
 
 void UpdateStatusBar()
 {
+
 	/* Show Number of lines */
 	int nLineCount = SendMessage(hEdit, EM_GETLINECOUNT, NULL, NULL);
 	SendMessage(hStatus, SB_SETTEXT, 1, (LPARAM)std::to_wstring(nLineCount).c_str());
@@ -563,6 +575,13 @@ void UpdateStatusBar()
 	std::wstring wstrCurrLine = std::to_wstring(nCurrLine + 1).c_str();
 	std::wstring wstrOutputCurrLine = L"Line: " + wstrCurrLine;
 	SendMessage(hStatus, SB_SETTEXT, 2, (LPARAM)wstrOutputCurrLine.c_str());
+}
+
+void UpdateFileTypeNameInStatusBar(LPWSTR lpwstrFilePath)
+{
+	std::wstring wstrFileType = Filetypes::getFileType(lpwstrFilePath);
+	std::wstring wstrFileTypeName = Filetypes::getFileTypeName(wstrFileType);
+	SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)wstrFileTypeName.c_str());
 }
 
 /* Adds a tab at the end of the Tab Control */
