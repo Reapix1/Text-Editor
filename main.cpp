@@ -272,6 +272,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	SendMessage(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
 	SendMessage(hEdit, EM_SETMARGINS, EC_LEFTMARGIN, 70);
 	SendMessage(hEdit, EM_SETEVENTMASK, NULL, (LPARAM)ENM_CHANGE);
+	SendMessage(hEdit, EM_LIMITTEXT, 0x7FFFFFFE, NULL);	// Increases the amount of text one can enter to 2,147,483,646 characters.
 	/*=== Rich edit ===*/
 
 	/*=== Status bar ===*/
