@@ -22,5 +22,5 @@ std::wstring Filetypes::getFileTypeName(std::wstring wstrFiletype)
 	else if (wstrFiletype == L"cpp")
 		return L"C++ source file";
 	else
-		return L"Unknown";
+		return wstrFiletype;
 }
