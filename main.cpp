@@ -127,6 +127,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			25,
 			TRUE);
 
+		MoveWindow(hToolBar,
+			0, 0,
+			LOWORD(lParam),
+			0,
+			TRUE);
+
 		RECT rect;
 		GetClientRect(hWnd, &rect);
 		int nVScrollBarSize;
