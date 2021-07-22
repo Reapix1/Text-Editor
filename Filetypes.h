@@ -1,10 +1,9 @@
 #pragma once
-#include <Windows.h>
-#include <iostream>
+#include "ConsoleCompile.h"
 
-class Filetypes
+
+namespace Filetypes
 {
-public:
-	static std::wstring getFileType(LPWSTR lpwstrFilePath);
-	static std::wstring getFileTypeName(std::wstring wstrFiletype);
+	std::wstring getFileType(LPWSTR lpwstrFilePath);
+	std::wstring getFileTypeName(std::wstring wstrFiletype);
 };

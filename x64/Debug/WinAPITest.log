@@ -1,10 +1,18 @@
-﻿  main.cpp
-D:\VSsource\WinAPITest\main.cpp(55,28): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(379,40): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(380,78): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(541,48): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(571,17): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(575,16): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(601,30): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
-D:\VSsource\WinAPITest\main.cpp(617,26): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+﻿  ConsoleCompile.cpp
+D:\VSsource\WinAPITest\ConsoleCompile.cpp(27,45): warning C4311: 'type cast': pointer truncation from 'HANDLE' to 'long'
+D:\VSsource\WinAPITest\ConsoleCompile.cpp(27,45): warning C4302: 'type cast': truncation from 'HANDLE' to 'long'
+D:\VSsource\WinAPITest\ConsoleCompile.cpp(33,40): warning C4311: 'type cast': pointer truncation from 'HANDLE' to 'long'
+D:\VSsource\WinAPITest\ConsoleCompile.cpp(33,40): warning C4302: 'type cast': truncation from 'HANDLE' to 'long'
+  Filetypes.cpp
+  main.cpp
+D:\VSsource\WinAPITest\main.cpp(44,28): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(377,40): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(378,78): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(539,48): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(569,17): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(573,16): warning C4244: 'initializing': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(599,30): warning C4244: '=': conversion from 'LRESULT' to 'int', possible loss of data
+D:\VSsource\WinAPITest\main.cpp(615,26): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+  toolbar.cpp
+  Generating Code...
   WinAPITest.vcxproj -> D:\VSsource\WinAPITest\x64\Debug\WinAPITest.exe

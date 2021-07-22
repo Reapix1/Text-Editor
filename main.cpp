@@ -6,28 +6,17 @@ static HWND hDlgGoToLine;
 static HWND hHScrollBar;
 static HWND hVScrollBar;
 static HWND hTabControl;
+static HWND hToolBar;
 
 static INITCOMMONCONTROLSEX icc;
 
 static std::vector<std::wstring> tabFilePaths;
-
 
 /* FILES */
 static OPENFILENAME ofn = {};
 static bool bIsFileCreated;
 static bool bTwoBytesPerChar;
 /* FILES */
-
-BOOL CALLBACK DlgGoToLineProc(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
-void SaveOpenedFile(HWND hWnd);
-void SaveFileWithDialog(HWND hWnd, OPENFILENAME ofn);
-void SaveFile(LPWSTR lpwstrFilePath);
-void OpenFileWithDialog(HWND hWnd, OPENFILENAME ofn);
-void OpenFileDragAndDrop(HDROP hDrop);
-void OpenFile(LPWSTR lpwstrFilePath);
-void UpdateStatusBar();
-void UpdateFileTypeNameInStatusBar(LPWSTR lpwstrFilePath);
-void AddTab(HWND hTabControl, LPWSTR lpwstrTabName, LPWSTR lpwstrFilePath);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -111,6 +100,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	case WM_CLOSE:
 	case WM_DESTROY:
+		FreeConsole();
 		PostQuitMessage(NULL);
 		return 0;
 	case WM_SETFOCUS:
@@ -120,10 +110,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		/* When resizing the client window the Edit Text is also resized, so that it matches the client window.*/
 	case WM_SIZE:
 		MoveWindow(hEdit,
-			200, 0 + 25,							//  starting x- and y-coordinates : y is reduced by size of TabControl
-			LOWORD(lParam) - 200 - 15,				//  width of client area - some space - width of vertical scroll bar
-			HIWORD(lParam) - 23 - 15 - 25,			//  height of client area - height of status bar - height of horizontal scroll bar - height of TabControl
-			TRUE);									//  repaint window
+			200, 0 + 25 + 28,							//  starting x- and y-coordinates : y is reduced by size of TabControl abd size of ToolBar
+			LOWORD(lParam) - 200 - 15,					//  width of client area - some space - width of vertical scroll bar
+			HIWORD(lParam) - 23 - 15 - 25 - 28,			//  height of client area - height of status bar - height of horizontal scroll bar - height of TabControl - height of ToolBar
+			TRUE);										//  repaint window
 
 		MoveWindow(hStatus,
 			0, 0,
@@ -132,7 +122,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			TRUE);
 
 		MoveWindow(hTabControl,
-			0, 0,
+			0, 28,
 			LOWORD(lParam),
 			25,
 			TRUE);
@@ -178,6 +168,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				SaveOpenedFile(hWnd);
 			else
 				SendMessage(hWnd, WM_COMMAND, ID_SAVE_AS, NULL);
+			break;
+		case ID_COMPILE:
+			ConsoleCompile::Compile();
 			break;
 		case ID_CLOSE:
 			SendMessage(hWnd, WM_DESTROY, NULL, NULL);
@@ -228,6 +221,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, INT nCmdShow)	// hPrevInstance is always 0.
 {
+	FreeConsole();
 	icc.dwSize = sizeof(INITCOMMONCONTROLSEX);
 	icc.dwICC = ICC_BAR_CLASSES | ICC_ANIMATE_CLASS;
 
@@ -294,8 +288,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	hTabControl = CreateWindowEx(0, WC_TABCONTROL, NULL, WS_CHILD | WS_VISIBLE | TCS_BUTTONS | TCS_FOCUSONBUTTONDOWN | TCS_FLATBUTTONS, 0, 0, 0, 0, hWnd, NULL, hInstance, NULL);
 	/*=== Tab Control (Holding all tabs) ===*/
 
-	SetMenu(hWnd, hMenu);
+	/*=== Tool Bar ===*/
+	hToolBar = Toolbar::CreateToolBar(hWnd, hInstance);
+	/*=== Tool Bar ===*/
 
+	SetMenu(hWnd, hMenu);
 
 	if (hWnd == NULL)
 	{
@@ -305,6 +302,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	InitializeHotKeys();
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
+	UpdateWindow(hToolBar);
 
 	while (1)	// TODO: Better implementation of while condition.
 	{
@@ -619,6 +617,23 @@ void AddTab(HWND hTabControl, LPWSTR lpwstrTabName, LPWSTR lpwstrFilePath)
 		SendMessage(hTabControl, TCM_SETCURSEL, nDuplicateTabIndex, NULL);
 	}
 }
+
+void GetCurrFilePath(wchar_t* filepath)
+{
+	SendMessage(hStatus, SB_GETTEXT, SendMessage(hStatus, SB_GETPARTS, NULL, NULL) - 1, (LPARAM)filepath);
+}
+
+void ShowCompileButton()
+{
+	SendMessage(hToolBar, TB_SETSTATE, ID_COMPILE, TBSTATE_ENABLED);
+}
+
+void HideCompileButton()
+{
+	SendMessage(hToolBar, TB_SETSTATE, ID_COMPILE, 0);
+}
+
+
 
 // TODO:::SYNTAX HIGHLIGHTING
 /*

@@ -1,5 +1,5 @@
-#include "HotKeys.h"
-#include <Windows.h>
+#include "Hotkeys.h"
+#include <windows.h>
 
 void InitializeHotKeys()
 {

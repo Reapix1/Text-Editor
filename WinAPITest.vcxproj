@@ -147,15 +147,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConsoleCompile.cpp" />
     <ClCompile Include="Filetypes.cpp" />
     <ClCompile Include="hotkeys.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="toolbar.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="ConsoleCompile.h" />
     <ClInclude Include="Filetypes.h" />
     <ClInclude Include="Hotkeys.h" />
     <ClInclude Include="res\resource1.h" />
+    <ClInclude Include="Toolbar.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\GoToLineBox.rc" />
