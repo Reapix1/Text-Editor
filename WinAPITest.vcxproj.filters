@@ -15,39 +15,39 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="hotkeys.cpp">
+    <ClCompile Include="src\hotkeys.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Filetypes.cpp">
+    <ClCompile Include="src\Filetypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConsoleCompile.cpp">
+    <ClCompile Include="src\ConsoleCompile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="toolbar.cpp">
+    <ClCompile Include="src\toolbar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.h">
+    <ClInclude Include="src\Application.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Hotkeys.h">
+    <ClInclude Include="src\Hotkeys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="res\resource1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Filetypes.h">
+    <ClInclude Include="src\Filetypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConsoleCompile.h">
+    <ClInclude Include="src\ConsoleCompile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Toolbar.h">
+    <ClInclude Include="src\Toolbar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

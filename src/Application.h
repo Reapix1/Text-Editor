@@ -28,7 +28,7 @@
 #include <fcntl.h>
 #include <io.h>
 
-#include "res/resource1.h"
+#include "../res/resource1.h"
 #include "Hotkeys.h"
 #include "Filetypes.h"
 #include "ConsoleCompile.h"
