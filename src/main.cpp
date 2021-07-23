@@ -640,7 +640,6 @@ void HideCompileButton()
 }
 
 
-
 // TODO:::SYNTAX HIGHLIGHTING
 /*
 void PaintTxt(LPCWSTR word) 

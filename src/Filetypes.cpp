@@ -33,8 +33,11 @@ std::wstring Filetypes::getFileTypeName(std::wstring wstrFiletype)
 	}
 	else if (wstrFiletype == L"cs")
 		return L"Visual C# source file (.cs)";
-	else if (wstrFiletype == L"py")
+	else if (wstrFiletype == L"py") 
+	{
+		ShowCompileButton();
 		return L"Python source file (.py)";
+	}
 	else if (wstrFiletype == L"java")
 		return L"Java source file (.java)";
 	else if (wstrFiletype == L"php")

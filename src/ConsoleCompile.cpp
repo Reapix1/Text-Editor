@@ -1,24 +1,6 @@
 #include "ConsoleCompile.h"
 
-void ConsoleCompile::Compile()
-{
-	wchar_t* filepath;
-	filepath = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
-	GetCurrFilePath(filepath);
-	if (filepath != NULL)
-	{
-		std::wstring wstrFiletype = Filetypes::getFileType(filepath);
-
-		if (wstrFiletype == L"cpp")
-		{
-			CompileCpp();
-			VirtualFree(filepath, 0, MEM_RELEASE);
-		}
-
-	}
-}
-
-void ConsoleCompile::CompileCpp()
+void ConsoleCompile::CreateConsole()
 {
 	/*FROM https://justcheckingonall.wordpress.com/2008/08/29/console-window-win32-app/ */
 	AllocConsole();
@@ -35,6 +17,34 @@ void ConsoleCompile::CompileCpp()
 	setvbuf(hf_in, NULL, _IONBF, 128);
 	*stdin = *hf_in;
 	/*FROM https://justcheckingonall.wordpress.com/2008/08/29/console-window-win32-app/ */
+}
+
+void ConsoleCompile::Compile()
+{
+	wchar_t* filepath;
+	filepath = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+	GetCurrFilePath(filepath);
+	if (filepath != NULL)
+	{
+		std::wstring wstrFiletype = Filetypes::getFileType(filepath);
+
+		if (wstrFiletype == L"cpp")
+		{
+			CompileCpp();
+			VirtualFree(filepath, 0, MEM_RELEASE);
+		}
+		else if (wstrFiletype == L"py")
+		{
+			CompilePython();
+			VirtualFree(filepath, 0, MEM_RELEASE);
+		}
+
+	}
+}
+
+void ConsoleCompile::CompileCpp()
+{
+	CreateConsole();
 
 	wchar_t* filepath;
 	filepath = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
@@ -47,6 +57,24 @@ void ConsoleCompile::CompileCpp()
 		out = L"g++ -o out " + wstrFilepath;
 		_wsystem(out.c_str());
 		system("out");
+		VirtualFree(filepath, 0, MEM_RELEASE);
+	}
+}
+
+void ConsoleCompile::CompilePython()
+{
+	CreateConsole();
+
+	wchar_t* filepath;
+	filepath = (wchar_t*)VirtualAlloc(NULL, MEM_4MB_PAGES, MEM_COMMIT, PAGE_READWRITE);
+	GetCurrFilePath(filepath);
+	if (filepath != NULL)
+	{
+		std::wstring wstrFilepath = filepath;
+		std::wstring out;
+		system("CLS");
+		out = L"python " + wstrFilepath;
+		_wsystem(out.c_str());
 		VirtualFree(filepath, 0, MEM_RELEASE);
 	}
 }
